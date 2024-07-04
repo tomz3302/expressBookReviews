@@ -53,8 +53,59 @@ regd_users.post("/login", (req,res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+  let isbn = req.params.isbn;
+  let username = req.session.authorization.username;
+  let review = req.query.review;
+  
+  let reviewExists = false;
+
+  
+  for (let bookId in books) {
+    if (books[bookId].isbn === isbn) {
+      
+      for (let reviewKey in books[bookId].reviews) {
+        if (books[bookId].reviews[reviewKey].user === username) {
+          
+          books[bookId].reviews[reviewKey].review = review;
+          reviewExists = true;
+          break;
+        }
+      }
+
+      if (!reviewExists) {
+        const newReviewKey = `review${Object.keys(books[bookId].reviews).length + 1}`;
+        books[bookId].reviews[newReviewKey] = { user: username, review: review };
+      }
+
+      return res.status(200).send({ message: "Review added/updated successfully." });
+    }
+  }
+
+  // If ISBN is not found
+  return res.status(404).send({ message: "Book not found." });
+
+ 
+});
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+  let isbn = req.params.isbn;
+  let username = req.session.authorization.username;
+
+  for (let bookId in books) {
+    if (books[bookId].isbn === isbn) {
+      
+      for (let reviewKey in books[bookId].reviews) {
+        if (books[bookId].reviews[reviewKey].user === username) {
+          
+          delete books[bookId].reviews[reviewKey];
+          return res.status(200).send({ message: "Review removed successfully." });
+        }
+      }
+      return res.status(404).send({ message: "Review by this user not found." });
+
+    }
+  }
+  return res.status(404).send({ message: "Book not found." });
+
 });
 
 module.exports.authenticated = regd_users;
